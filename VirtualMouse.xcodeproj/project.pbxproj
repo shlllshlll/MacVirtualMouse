@@ -104,6 +104,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = A725E8212E9B9EF100B819E6;
 			minimizedProjectReferenceProxies = 1;

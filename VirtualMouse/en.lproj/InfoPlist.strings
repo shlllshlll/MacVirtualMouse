@@ -1,0 +1,2 @@
+/* Localized InfoPlist strings for English */
+"NSAccessibilityUsageDescription" = "Virtual Mouse needs Accessibility permission to monitor global mouse movement so it can draw a virtual cursor on screen. This helps display the pointer during remote desktop or screen sharing sessions.";

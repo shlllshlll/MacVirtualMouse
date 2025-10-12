@@ -26,7 +26,8 @@ final class StatusBarController {
         let menu = NSMenu()
 
         for (index, screen) in NSScreen.screens.enumerated() {
-            let screenName = screen.localizedName.isEmpty ? "Screen \(index + 1)" : screen.localizedName
+            let defaultScreenName = String(format: NSLocalizedString("screen_format", comment: "Default screen name with index"), index + 1)
+            let screenName = screen.localizedName.isEmpty ? defaultScreenName : screen.localizedName
             let screenItem = NSMenuItem(title: screenName, action: #selector(didToggleScreen(_:)), keyEquivalent: "")
             screenItem.target = self
             screenItem.representedObject = screen
@@ -37,7 +38,7 @@ final class StatusBarController {
         if !menu.items.isEmpty {
             menu.addItem(NSMenuItem.separator())
         }
-        let quitItem = NSMenuItem(title: "Exit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    let quitItem = NSMenuItem(title: NSLocalizedString("quit", comment: "Quit menu item title"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quitItem)
 
         statusItem.menu = menu

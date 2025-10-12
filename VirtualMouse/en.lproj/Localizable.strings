@@ -1,0 +1,9 @@
+"screen_format" = "Screen %d";
+"quit" = "Quit";
+"permission_needed_title" = "Accessibility Permission Required";
+"permission_needed_info" = "Virtual Mouse needs Accessibility permission to monitor mouse events.\n\nPlease grant the permission in System Settings:\nSystem Settings > Privacy & Security > Accessibility\n\nAfter granting permission, click the \"Re-check\" button.";
+"permission_retry" = "Re-check";
+"permission_open_settings" = "Open System Settings";
+"permission_granted_title" = "Permission Granted";
+"permission_granted_info" = "Accessibility permission was granted. The app will start now.";
+"ok" = "OK";

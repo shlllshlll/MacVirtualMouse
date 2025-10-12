@@ -1,10 +1,12 @@
 // DisplayLinkScheduler.swift
 import Cocoa
-import CoreVideo
+import QuartzCore
 
-/// Bridges a `CVDisplayLink` callback into a main-thread closure so cursor updates stay in sync with the display refresh rate.
+/// Bridges display link callbacks into a handler closure, preferring the modern `CADisplayLink` API on macOS 15+ while
+/// keeping a CoreVideo fallback for older systems.
 final class DisplayLinkScheduler {
-    private var displayLink: CVDisplayLink?
+    private var cadDisplayLink: CADisplayLink?
+    private var cvDisplayLink: CVDisplayLink?
     private let handler: () -> Void
 
     init(handler: @escaping () -> Void) {
@@ -16,8 +18,36 @@ final class DisplayLinkScheduler {
     }
 
     func start() {
-        guard displayLink == nil else { return }
+        guard cadDisplayLink == nil, cvDisplayLink == nil else { return }
 
+        if #available(macOS 15.0, *) {
+            startUsingDisplayLink()
+        } else {
+            startUsingCoreVideo()
+        }
+    }
+
+    func stop() {
+        if #available(macOS 15.0, *) {
+            cadDisplayLink?.invalidate()
+            cadDisplayLink = nil
+        } else if let displayLink = cvDisplayLink {
+            CVDisplayLinkStop(displayLink)
+            cvDisplayLink = nil
+        }
+    }
+
+    @available(macOS 15.0, *)
+    private func startUsingDisplayLink() {
+        guard let screen = NSScreen.main else { return }
+
+        let displayLink = screen.displayLink(target: self, selector: #selector(step(_:)))
+        displayLink.add(to: .main, forMode: .common)
+        cadDisplayLink = displayLink
+    }
+
+    @available(macOS, deprecated: 15.0)
+    private func startUsingCoreVideo() {
         var link: CVDisplayLink?
         let creationResult = CVDisplayLinkCreateWithActiveCGDisplays(&link)
 
@@ -43,12 +73,11 @@ final class DisplayLinkScheduler {
             return
         }
 
-        self.displayLink = displayLink
+        cvDisplayLink = displayLink
     }
 
-    func stop() {
-        guard let displayLink = displayLink else { return }
-        CVDisplayLinkStop(displayLink)
-        self.displayLink = nil
+    @available(macOS 15.0, *)
+    @objc private func step(_ displayLink: CADisplayLink) {
+        handler()
     }
 }

@@ -7,7 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var permissionCheckTimer: Timer?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // 首先检查辅助功能权限
+        // First, check Accessibility permissions
         checkAccessibilityPermission()
     }
 
@@ -15,29 +15,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         permissionCheckTimer?.invalidate()
     }
 
-    // MARK: - 辅助功能权限检查
+    // MARK: - Accessibility permission checks
 
     private func checkAccessibilityPermission() {
         let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true]
         let accessEnabled = AXIsProcessTrustedWithOptions(options)
 
         if accessEnabled {
-            // 权限已授予，启动应用
+            // Permission granted — start the application
             startApplication()
         } else {
-            // 显示权限提示对话框
+            // Show permission prompt dialog
             showPermissionAlert()
         }
     }
 
     private func showPermissionAlert() {
-        let alert = NSAlert()
-        alert.messageText = "需要辅助功能权限"
-        alert.informativeText = "Virtual Mouse 需要辅助功能权限来监听鼠标事件。\n\n请在系统设置中授予权限：\n系统设置 > 隐私与安全性 > 辅助功能\n\n授予权限后，点击\"重新检查\"按钮。"
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "重新检查")
-        alert.addButton(withTitle: "打开系统设置")
-        alert.addButton(withTitle: "退出")
+    let alert = NSAlert()
+    alert.messageText = NSLocalizedString("permission_needed_title", comment: "Title for accessibility permission alert")
+    alert.informativeText = NSLocalizedString("permission_needed_info", comment: "Informative text for accessibility permission alert")
+    alert.alertStyle = .warning
+    alert.addButton(withTitle: NSLocalizedString("permission_retry", comment: "Retry button title"))
+    alert.addButton(withTitle: NSLocalizedString("permission_open_settings", comment: "Open settings button title"))
+    alert.addButton(withTitle: NSLocalizedString("quit", comment: "Quit button title"))
 
         switch alert.runModal() {
         case .alertFirstButtonReturn:
@@ -49,7 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                 NSWorkspace.shared.open(url)
             }
-            // 打开设置后，开始定时检查权限
+            // After opening Settings, start a timer to poll for permission
             startPermissionCheckTimer()
 
         default:
@@ -74,10 +74,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 DispatchQueue.main.async {
                     let successAlert = NSAlert()
-                    successAlert.messageText = "权限已授予"
-                    successAlert.informativeText = "辅助功能权限已成功授予，应用即将启动。"
+                    successAlert.messageText = NSLocalizedString("permission_granted_title", comment: "Title shown when permission granted")
+                    successAlert.informativeText = NSLocalizedString("permission_granted_info", comment: "Info shown when permission granted")
                     successAlert.alertStyle = .informational
-                    successAlert.addButton(withTitle: "确定")
+                    successAlert.addButton(withTitle: NSLocalizedString("ok", comment: "OK button title"))
                     successAlert.runModal()
 
                     self.startApplication()
