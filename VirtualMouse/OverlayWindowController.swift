@@ -1,17 +1,13 @@
 // OverlayWindowController.swift
 import Cocoa
 
+@MainActor
 class OverlayWindowController {
     private var window: NSWindow
     private var virtualCursorView: VirtualCursorView
-    private var screenName: String
-    private var screenFrame: NSRect
     private var wasMouseInWindow: Bool = false
 
     init(screen: NSScreen) {
-        self.screenName = screen.localizedName
-        self.screenFrame = screen.frame
-
         // 关键：视图的坐标系应该从 (0,0) 开始，而不是屏幕的全局坐标
         let viewFrame = NSRect(origin: .zero, size: screen.frame.size)
 
@@ -29,10 +25,9 @@ class OverlayWindowController {
         )
 
         // 3. 配置窗口关键属性
-        window.level = .floating
+        window.level = .screenSaver
         window.isOpaque = false
-        // 🔍 可视化调试: 设置一个半透明的背景色，方便观察窗口位置和大小
-        window.backgroundColor = NSColor.red.withAlphaComponent(0.2)
+        window.backgroundColor = .clear
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         window.hasShadow = false
@@ -61,7 +56,7 @@ class OverlayWindowController {
         let windowFrame = window.frame
         let mouseInWindow = NSPointInRect(location, windowFrame)
 
-        // 只有当鼠标进入或离开此屏幕窗口，或者在窗口内移动时，才更新并记录日志
+        // 仅在鼠标位于此屏幕时刷新虚拟指针
         if mouseInWindow || wasMouseInWindow {
             // 步骤1: 将全局坐标转换为窗口坐标 (原点在左下角)
             let windowX = location.x - windowFrame.origin.x
@@ -71,17 +66,6 @@ class OverlayWindowController {
             let viewX = windowX
             let viewY = windowFrame.size.height - windowY
             let localPoint = NSPoint(x: viewX, y: viewY)
-
-            // 当鼠标状态（进入/离开）改变时，打印详细日志
-            if mouseInWindow != wasMouseInWindow {
-                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                print("🖱️ [屏幕变化 - \(screenName)]")
-                print("   - 状态: 鼠标\(mouseInWindow ? "进入" : "离开")此屏幕")
-                print("   - 全局位置: (x: \(String(format: "%.1f", location.x)), y: \(String(format: "%.1f", location.y)))")
-                print("   - 屏幕 Frame: (x: \(String(format: "%.1f", windowFrame.origin.x)), y: \(String(format: "%.1f", windowFrame.origin.y)), w: \(String(format: "%.1f", windowFrame.width)), h: \(String(format: "%.1f", windowFrame.height)))")
-                print("   - 转换后视图坐标: (x: \(String(format: "%.1f", localPoint.x)), y: \(String(format: "%.1f", localPoint.y)))")
-                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            }
 
             wasMouseInWindow = mouseInWindow
 
