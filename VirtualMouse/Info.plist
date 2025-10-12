@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>Virtual Mouse 需要访问辅助功能权限来监听全局鼠标移动事件，以便在屏幕上绘制虚拟鼠标指针。这对于在远程桌面共享时显示鼠标指针非常有用。</string>
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>

@@ -1,0 +1,28 @@
+# Xcode
+.DS_Store
+DerivedData/
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+xcshareddata/
+
+# Swift Package Manager (if used)
+.swiftpm/
+Package.resolved
+
+# Carthage (if used)
+Carthage/Build/
+
+# CocoaPods (if used)
+Pods/
+
+# Optional: App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
