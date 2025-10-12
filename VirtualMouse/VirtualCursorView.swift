@@ -70,7 +70,7 @@ class VirtualCursorView: NSView {
 
     private func calculateCursorRect() -> NSRect {
         guard let image = cursorImage else { return .zero }
-        // 使用翻转后的坐标系统
+        // Use the flipped coordinate system
         let drawPoint = NSPoint(
             x: cursorLocation.x - cursorHotSpot.x,
             y: cursorLocation.y - cursorHotSpot.y
