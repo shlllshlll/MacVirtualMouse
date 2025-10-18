@@ -51,6 +51,14 @@ class OverlayWindowController {
         window.close()
     }
 
+    func updateScreenConfiguration(to screen: NSScreen) {
+        let newContentFrame = NSRect(origin: .zero, size: screen.frame.size)
+        virtualCursorView.frame = newContentFrame
+        window.setFrame(screen.frame, display: true)
+        window.contentView?.frame = newContentFrame
+        virtualCursorView.needsDisplay = true
+    }
+
     // Public API to update the cursor state
     func updateCursor(image: NSImage, hotSpot: NSPoint, location: NSPoint) {
         let windowFrame = window.frame

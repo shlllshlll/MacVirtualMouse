@@ -1,3 +1,5 @@
+#vscode
+*.code-workspace
 # Xcode
 .DS_Store
 DerivedData/

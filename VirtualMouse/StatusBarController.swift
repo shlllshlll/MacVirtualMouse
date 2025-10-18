@@ -4,10 +4,11 @@ import Cocoa
 @MainActor
 final class StatusBarController {
     private let statusItem: NSStatusItem
-    private var overlayControllers: [NSScreen: OverlayWindowController] = [:]
+    private var overlayControllers: [CGDirectDisplayID: OverlayWindowController] = [:]
     private lazy var displayLink = DisplayLinkScheduler { [weak self] in
         self?.refreshCursorSnapshot()
     }
+    private var screenChangeObserver: NSObjectProtocol?
 
     private var lastCursorIdentifier: ObjectIdentifier?
     private var lastHotSpot: NSPoint = .zero
@@ -20,41 +21,63 @@ final class StatusBarController {
             button.image?.isTemplate = true
         }
         buildMenu()
+        observeScreenChanges()
     }
 
     private func buildMenu() {
         let menu = NSMenu()
 
         for (index, screen) in NSScreen.screens.enumerated() {
+            guard let displayID = displayID(for: screen) else { continue }
             let defaultScreenName = String(format: NSLocalizedString("screen_format", comment: "Default screen name with index"), index + 1)
             let screenName = screen.localizedName.isEmpty ? defaultScreenName : screen.localizedName
             let screenItem = NSMenuItem(title: screenName, action: #selector(didToggleScreen(_:)), keyEquivalent: "")
             screenItem.target = self
-            screenItem.representedObject = screen
-            screenItem.state = overlayControllers[screen] == nil ? .off : .on
+            screenItem.representedObject = NSNumber(value: displayID)
+            screenItem.state = overlayControllers[displayID] == nil ? .off : .on
             menu.addItem(screenItem)
         }
 
         if !menu.items.isEmpty {
             menu.addItem(NSMenuItem.separator())
         }
-    let quitItem = NSMenuItem(title: NSLocalizedString("quit", comment: "Quit menu item title"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: NSLocalizedString("quit", comment: "Quit menu item title"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quitItem)
 
         statusItem.menu = menu
     }
 
-    @objc private func didToggleScreen(_ sender: NSMenuItem) {
-        guard let screen = sender.representedObject as? NSScreen else { return }
+    private func observeScreenChanges() {
+        screenChangeObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.handleScreenParametersDidChange()
+            }
+        }
+    }
 
-        if overlayControllers[screen] == nil {
+    deinit {
+        if let observer = screenChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    @objc private func didToggleScreen(_ sender: NSMenuItem) {
+        guard let displayIDNumber = sender.representedObject as? NSNumber else { return }
+        let displayID: CGDirectDisplayID = displayIDNumber.uint32Value
+
+        if overlayControllers[displayID] == nil {
+            guard let screen = screen(for: displayID) else {
+                sender.state = .off
+                buildMenu()
+                return
+            }
             let controller = OverlayWindowController(screen: screen)
             controller.showWindow()
-            overlayControllers[screen] = controller
+            overlayControllers[displayID] = controller
             sender.state = .on
         } else {
-            overlayControllers[screen]?.close()
-            overlayControllers.removeValue(forKey: screen)
+            overlayControllers[displayID]?.close()
+            overlayControllers.removeValue(forKey: displayID)
             sender.state = .off
         }
 
@@ -94,5 +117,45 @@ final class StatusBarController {
         for controller in overlayControllers.values {
             controller.updateCursor(image: image, hotSpot: hotSpot, location: location)
         }
+    }
+
+    private func handleScreenParametersDidChange() {
+        let screens = NSScreen.screens
+        var screensByID: [CGDirectDisplayID: NSScreen] = [:]
+
+        for screen in screens {
+            guard let displayID = displayID(for: screen) else { continue }
+            screensByID[displayID] = screen
+        }
+
+        let missingDisplayIDs = Set(overlayControllers.keys).subtracting(screensByID.keys)
+        for displayID in missingDisplayIDs {
+            overlayControllers[displayID]?.close()
+            overlayControllers.removeValue(forKey: displayID)
+        }
+
+        for (displayID, controller) in overlayControllers {
+            if let screen = screensByID[displayID] {
+                controller.updateScreenConfiguration(to: screen)
+            }
+        }
+
+        syncDisplayLinkState()
+        buildMenu()
+        refreshCursorSnapshot(force: true)
+    }
+
+    private func screen(for displayID: CGDirectDisplayID) -> NSScreen? {
+        return NSScreen.screens.first { screen in
+            guard let currentID = self.displayID(for: screen) else { return false }
+            return currentID == displayID
+        }
+    }
+
+    private func displayID(for screen: NSScreen) -> CGDirectDisplayID? {
+        guard
+            let screenNumber = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else { return nil }
+        return screenNumber.uint32Value
     }
 }
